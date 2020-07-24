@@ -45,32 +45,30 @@ would check the version of sshd and replace it with different values.
 
 currently, this shell scripts support sshd version 6.6p1 or 6.6.1p1 or 7.2p2 only.
 
->>>>>>>>>>
-@42ec8:       49 89 c7                mov    r15,rax                                 #temporarily save the value in rax.
+	@42ec8:       49 89 c7                mov    r15,rax                                 #temporarily save the value in rax.
 
-@42ecb:       48 8d 3d 88 2d 04 00    lea    rdi,[rip+0x42d8f]                       #the first parameter is string "JimDbg:Msg In/Out:(%.*s)" @ 0x85c5a  
+	@42ecb:       48 8d 3d 88 2d 04 00    lea    rdi,[rip+0x42d8f]                       #the first parameter is string "JimDbg:Msg In/Out:(%.*s)" @ 0x85c5a  
 
-@42ed2:       89 c6                   mov    esi,eax                                 #value in eas is the length of buffer.	
+	@42ed2:       89 c6                   mov    esi,eax                                 #value in eas is the length of buffer.	
 
-@42ed4:       48 89 e2                mov    rdx,rsp                                 #value in the rsp is the memory address of buffer.
+	@42ed4:       48 89 e2                mov    rdx,rsp                                 #value in the rsp is the memory address of buffer.
 
-@42ed7:       e8 04 a4 00 00          call   0x4d2e0 <error>                         #call error function to print out debug info.
-	
-@42edc:       90 90 90                                                               #NOP instruction code to do nothing, just to make file size unchanged.
-	
-@42edf:       4c 89 f8                mov    rax,r15                                 #restore rax
+	@42ed7:       e8 04 a4 00 00          call   0x4d2e0 <error>                         #call error function to print out debug info.
 
-@42ee2:       e9 99 00 00 00          jmp    0x42f80                                 #jump to normal codes.
->>>>>>>>>>>
+	@42edc:       90 90 90                                                               #NOP instruction code to do nothing, just to make file size unchanged.
+
+	@42edf:       4c 89 f8                mov    rax,r15                                 #restore rax
+
+	@42ee2:       e9 99 00 00 00          jmp    0x42f80                                 #jump to normal codes.
 so the codes we write into sshd file using shell script would be:
 
-/usr/bin/printf '\x49\x89\xc7\x48\x8d\x3d\x88\x2d\x04\x00\x89\xc6\x48\x89\xe2\xe8\x04\xa4\x00\x00\x90\x90\x90\x4c\x89\xf8\xe9\x99\x00\x00\x00' |/bin/dd of=/usr/sbin/sshd-temp bs=1 seek=274120 count=31 conv=notrunc 2>&1
+	/usr/bin/printf '\x49\x89\xc7\x48\x8d\x3d\x88\x2d\x04\x00\x89\xc6\x48\x89\xe2\xe8\x04\xa4\x00\x00\x90\x90\x90\x4c\x89\xf8\xe9\x99\x00\x00\x00' |/bin/dd of=/usr/sbin/sshd-temp bs=1 seek=274120 count=31 conv=notrunc 2>&1
 
 also, we need to replace one string "channel %d: filter stops" in .rodata of sshd file at address 0x85c5a by new string "JimDbg:Msg In/Out:(%.*s)", which would be the first parameter when we call function error to print out buffer.
 
 so below codes in script would be written into sshd by offset 0x85c5a.
 
-/usr/bin/printf '\x4A\x69\x6D\x44\x62\x67\x3A\x4D\x73\x67\x20\x49\x6E\x2F\x4F\x75\x74\x3A\x28\x25\x2E\x2A\x73\x29\x00' |/bin/dd of=/usr/sbin/sshd-temp bs=1 seek=547930 count=25 conv=notrunc 2>&1
+	/usr/bin/printf '\x4A\x69\x6D\x44\x62\x67\x3A\x4D\x73\x67\x20\x49\x6E\x2F\x4F\x75\x74\x3A\x28\x25\x2E\x2A\x73\x29\x00' |/bin/dd of=/usr/sbin/sshd-temp bs=1 seek=547930 count=25 conv=notrunc 2>&1
 	
 #how to use this script:
 
