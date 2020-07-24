@@ -11,7 +11,7 @@ By that, one can easily check the auth.log and figure out whether an outside dev
 
 Below screenshot is an example of monitoring debug info in auth.log in real time after applying the binary patch, which prints out the debug info of a new incoming ssh connection (the new incoming ssh is on the right part of the screenshot).
 
-    ![sample-output-of-patch-sshd](/images/patched-sshd-output.png)
+![sample-output-of-patch-sshd](/images/patched-sshd-output.png)
 # How the shell script works
 The main idea is to replace some binary codes of sshd file by our own machine codes, to call error function to print out the buffer every time function "channel_handle_rfd" was called inside sshd.
 
