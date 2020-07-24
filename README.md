@@ -45,21 +45,21 @@ would check the version of sshd and replace it with different values.
 
 currently, this shell scripts support sshd version 6.6p1 or 6.6.1p1 or 7.2p2 only.
 
-	@42ec8:       49 89 c7                mov    r15,rax                                 #temporarily save the value in rax.
+	@42ec8:       49 89 c7                mov    r15,rax             #temporarily save the value in rax.
 
-	@42ecb:       48 8d 3d 88 2d 04 00    lea    rdi,[rip+0x42d8f]                       #the first parameter is string "JimDbg:Msg In/Out:(%.*s)" @ 0x85c5a  
+	@42ecb:       48 8d 3d 88 2d 04 00    lea    rdi,[rip+0x42d8f]   #the first parameter is string "JimDbg:Msg In/Out:(%.*s)" @ 0x85c5a  
 
-	@42ed2:       89 c6                   mov    esi,eax                                 #value in eas is the length of buffer.	
+	@42ed2:       89 c6                   mov    esi,eax             #value in eas is the length of buffer.	
 
-	@42ed4:       48 89 e2                mov    rdx,rsp                                 #value in the rsp is the memory address of buffer.
+	@42ed4:       48 89 e2                mov    rdx,rsp             #value in the rsp is the memory address of buffer.
 
-	@42ed7:       e8 04 a4 00 00          call   0x4d2e0 <error>                         #call error function to print out debug info.
+	@42ed7:       e8 04 a4 00 00          call   0x4d2e0 <error>     #call error function to print out debug info.
 
-	@42edc:       90 90 90                                                               #NOP instruction code to do nothing, just to make file size unchanged.
+	@42edc:       90 90 90                                           #NOP instruction code to do nothing, just to make file size unchanged.
 
-	@42edf:       4c 89 f8                mov    rax,r15                                 #restore rax
+	@42edf:       4c 89 f8                mov    rax,r15             #restore rax
 
-	@42ee2:       e9 99 00 00 00          jmp    0x42f80                                 #jump to normal codes.
+	@42ee2:       e9 99 00 00 00          jmp    0x42f80             #jump to normal codes.
 so the codes we write into sshd file using shell script would be:
 
 	/usr/bin/printf '\x49\x89\xc7\x48\x8d\x3d\x88\x2d\x04\x00\x89\xc6\x48\x89\xe2\xe8\x04\xa4\x00\x00\x90\x90\x90\x4c\x89\xf8\xe9\x99\x00\x00\x00' |/bin/dd of=/usr/sbin/sshd-temp bs=1 seek=274120 count=31 conv=notrunc 2>&1
@@ -85,7 +85,16 @@ After that, you'll see debug log info printed into /var/log/auth.log file, and y
 The patched sshd process would print any output of ssh commands executions into /var/log/auth.log file, so in case you run "tail -f /var/log/auth.log" to monitor the output of auth.log in real time, the output of "tail" command would be printed into auth.log again, this would result in loop of auth.log generation&new log displayed to your terminal, so you may see many flooded debug info displayed when you run "tail -f /var/log/auth.log".
 There are fours solutions for this limitation:
 
-	1. don't close your current ssh connection terminal window from which you run "./patch-sshd.sh", and use the same window to run "tail -f /var/log/auth.log" after patching sshd.This could avoid log loop and flooding as the current ssh connection was established based on non-patched sshd process (before you run patch), so this ssh connection would not print out any log into /var/log/auth.log. Therefor it won't cause log loop and flooding even if you "tail -f /var/log/auth.log" to monitor the auth.log in real time.
-	2. or open a new terminal window, use telnet to login to the server instead of ssh. By that, you could also run "tail -f /var/log/auth.log" without flooding logs into auth.log, as the telnet service is not patched at all and it won't print any debug log into auth.log.
-	3. or run "/usr/sbin/sshd.bak -p 777" to bring up the old sshd version and listens on port 777(change port number as you want), then establish a new ssh connection to port 777(instead of default port 22 which is  listend by patched sshd now), then run "tail -f /var/log/auth.log" from the new ssh windows with port 777. This could also avoid log flooding as tail command executed by such ssh connection is baed on old sshd which would not print out terminal display into auth.log, while the display of ssh           connection  with patched sshd port 22 would still be printed into  logs. 
-	4. or simply don't run "tail -f /var/log/auth.log" to monitor the debug info of ssh in real time, instead, wait until your test finished and log generated, then open the auth.log using vi to check the logs afterwards.
+	1. don't close your current ssh connection terminal window from which you run "./patch-sshd.sh", and use the same window to run "tail -f /var/log/auth.log" after patching sshd.
+	This could avoid log loop and flooding as the current ssh connection was established based on non-patched sshd process (before you run patch), 
+	so this ssh connection would not print out any log into /var/log/auth.log. 
+	Therefor it won't cause log loop and flooding even if you "tail -f /var/log/auth.log" to monitor the auth.log in real time.
+	2. or open a new terminal window, use telnet to login to the server instead of ssh. 
+	By that, you could also run "tail -f /var/log/auth.log" without flooding logs into auth.log, as the telnet service is not patched at all and it won't print any debug log into auth.log.
+	3. or run "/usr/sbin/sshd.bak -p 777" to bring up the old sshd version and listens on port 777(change port number as you want),
+	then establish a new ssh connection to port 777(instead of default port 22 which is  listend by patched sshd now), 
+	then run "tail -f /var/log/auth.log" from the new ssh windows with port 777. 
+	This could also avoid log flooding as tail command executed by such ssh connection is baed on old sshd which would not print out terminal display into auth.log, 
+	while the display of ssh connection  with patched sshd port 22 would still be printed into  logs. 
+	4. or simply don't run "tail -f /var/log/auth.log" to monitor the debug info of ssh in real time, instead, 
+	wait until your test finished and log generated, then open the auth.log using vi to check the logs afterwards.
