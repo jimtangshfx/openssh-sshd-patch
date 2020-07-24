@@ -19,14 +19,22 @@ In the below "if/else" conditional codes of function channel_handle_rfd, in most
 
 >>>>>>>>>>>
 if (c->input_filter != NULL) {
+
 		if (c->input_filter(c, buf, len) == -1) {
+		
 			debug2("channel %d: filter stops", c->self);
+			
 			chan_read_failed(c);
 		}
+		
 	} else if (c->datagram) {
+	
 		buffer_put_string(&c->input, buf, len);
+		
 	} else {
+	
 		buffer_append(&c->input, buf, len);
+		
 	}
 
 >>>>>>>>>>
@@ -38,21 +46,21 @@ would check the version of sshd and replace it with different values.
 currently, this shell scripts support sshd version 6.6p1 or 6.6.1p1 or 7.2p2 only.
 
 >>>>>>>>>>
-42ec8:       49 89 c7                mov    r15,rax				    #temporarily save the value in rax.
+42ec8:       49 89 c7                mov    r15,rax                                 #temporarily save the value in rax.
 
-42ecb:       48 8d 3d 88 2d 04 00    lea    rdi,[rip+0x42d8f]			    #the first parameter is string "JimDbg:Msg In/Out:(%.*s)" @ 0x85c5a  
+42ecb:       48 8d 3d 88 2d 04 00    lea    rdi,[rip+0x42d8f]                       #the first parameter is string "JimDbg:Msg In/Out:(%.*s)" @ 0x85c5a  
 
-42ed2:       89 c6  		     mov    esi,eax				    #value in eas is the length of buffer.	
+42ed2:       89 c6                   mov    esi,eax                                 #value in eas is the length of buffer.	
 
-42ed4:       48 89 e2 		     mov    rdx,rsp				    #value in the rsp is the memory address of buffer.
+42ed4:       48 89 e2                mov    rdx,rsp                                 #value in the rsp is the memory address of buffer.
 
-42ed7:       e8 04 a4 00 00          call   0x4d2e0 <error>			    #call error function to print out debug info.
+42ed7:       e8 04 a4 00 00          call   0x4d2e0 <error>                         #call error function to print out debug info.
 	
-42edc:       90 90 90                						    #NOP instruction code to do nothing, just to make file size unchanged.
+42edc:       90 90 90                                                               #NOP instruction code to do nothing, just to make file size unchanged.
 	
-42edf:       4c 89 f8                mov    rax,r15				    #restore rax
+42edf:       4c 89 f8                mov    rax,r15                                 #restore rax
 
-42ee2:       e9 99 00 00 00          jmp    0x42f80				    #jump to normal codes.
+42ee2:       e9 99 00 00 00          jmp    0x42f80                                 #jump to normal codes.
 >>>>>>>>>>>
 also, we need to replace one string "channel %d: filter stops" in .rodata of sshd file at address 0x85c5a by new string "JimDbg:Msg In/Out:(%.*s)", which would be the first parameter when we call function error to print out buffer.
 
@@ -61,13 +69,16 @@ so below codes in script would be written into sshd by offset 0x85c5a.
 /usr/bin/printf '\x4A\x69\x6D\x44\x62\x67\x3A\x4D\x73\x67\x20\x49\x6E\x2F\x4F\x75\x74\x3A\x28\x25\x2E\x2A\x73\x29\x00' |/bin/dd of=/usr/sbin/sshd-temp bs=1 seek=547930 count=25 conv=notrunc 2>&1
 	
 #how to use this script:
+
 Simply put attached patch-sshd.sh onto the target server by ftp, or just create a new .sh file and copy the content of attached patch-sshd.sh file into that new created .sh file.
+
 then run command "chmod 755 patch-sshd.sh" to make it executable.
+
 Switch to root account (this script needs root privilege), then run "./patch-sshd.sh" to patch the /usr/sbin/sshd file. The script would restart sshd service automatically once done.
 
 After that, you'll see debug log info printed into /var/log/auth.log file, and you could "tail -f /var/log/auth.log" to check out all the command input/output made by any new SSH connection in real time.
 
-One limitation of current sshd patch script:
+#One limitation of current sshd patch script:
 
 The patched sshd process would print any output of ssh commands executions into /var/log/auth.log file, so in case you run "tail -f /var/log/auth.log" to monitor the output of auth.log in real time, the output of "tail" command would be printed into auth.log again, this would result in loop of auth.log generation&new log displayed to your terminal, so you may see many flooded debug info displayed when you run "tail -f /var/log/auth.log".
 There are fours solutions for this limitation:
